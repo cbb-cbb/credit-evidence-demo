@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="信贷指标异常分析交互作品：以合成数据演示数据覆盖检查、渠道证据比较与人工复核，记录真实探索过程与AI协作边界。">
+  <meta name="theme-color" content="#122b40">
+  <title>信贷指标异常 · 证据工作台 | cbb-cbb 的产品探索</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="证据工作台首页"><span class="brand-mark" aria-hidden="true">E</span><span>证据工作台<small>cbb-cbb / 产品探索作品</small></span></a>
+    <nav aria-label="页面导航"><a href="#demo">体验 Demo</a><a href="#exploration">探索记录</a><a href="https://github.com/cbb-cbb/credit-evidence-demo" target="_blank" rel="noreferrer">查看代码 ↗</a></nav>
+  </header>
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy"><p class="eyebrow">信贷指标异常 / 个人交互作品</p><h1>先确认数据，<br>再解释异常。</h1><p class="hero-description">一个关于分析可信度的产品实验：用可检查的数据支持判断，在证据不足时说清楚原因，让人的复核留下记录。</p><a class="primary hero-link" href="#demo">用一分钟体验 <span aria-hidden="true">↓</span></a></div>
+      <aside class="hero-note" aria-label="作品运行方式"><span class="note-number">01 → 02 → 03</span><h2>检查覆盖 → 比较证据 → 人工复核</h2><p>这里使用合成数据和透明规则，所有计算在浏览器中完成；没有在线调用大模型。</p><div class="note-tags"><span>无需登录</span><span>无需 API 密钥</span><span>不接入公司数据</span></div><p class="quiet">AI 辅助实现 · 贡献与验证范围见下方探索记录</p></aside>
+    </section>
+
+    <section id="demo" class="demo-section" aria-labelledby="demo-heading">
+      <div class="section-top"><div><p class="eyebrow">INTERACTIVE DEMO</p><h2 id="demo-heading">同一个问题，换一种数据再看。</h2></div><span class="mode-badge"><span aria-hidden="true"></span>合成数据 · 透明规则</span></div>
+      <div class="demo-layout">
+        <aside class="setup-panel">
+          <div class="panel-title"><span class="step-label">01</span><h3>选择场景与时间</h3></div>
+          <p class="field-help">切换场景会重新生成对应数据，每次结果均可复算。</p>
+          <div id="scenarios" class="scenario-list" role="group" aria-label="合成数据场景"></div>
+          <div class="coverage-card"><span>数据覆盖范围</span><strong id="coverage-label">2026.06.01 — 2026.07.30</strong><small>分析指标：首期30天逾期率（FPD30）</small></div>
+          <form id="analysis-form" novalidate>
+            <fieldset><legend>正常对比期</legend><div class="date-row"><label for="base-start">开始日期<input id="base-start" name="base-start" type="date" required></label><label for="base-end">结束日期<input id="base-end" name="base-end" type="date" required></label></div></fieldset>
+            <fieldset><legend>待分析期</legend><div class="date-row"><label for="anomaly-start">开始日期<input id="anomaly-start" name="anomaly-start" type="date" required></label><label for="anomaly-end">结束日期<input id="anomaly-end" name="anomaly-end" type="date" required></label></div></fieldset>
+            <p class="field-help">四个日期可自由修改。运行时检查先后顺序、窗口重叠与数据覆盖。</p>
+            <p id="date-hint" class="inline-warning" role="status" hidden></p>
+            <button class="primary run-button" type="submit">运行分析 <span aria-hidden="true">→</span></button>
+          </form>
+          <button id="missing-case" type="button" class="secondary full-width">试试没有数据的9月</button>
+          <button id="reset-periods" type="button" class="text-button full-width">恢复有数据的日期</button>
+          <p class="local-note">更改描述不能创造数据。这里通过切换场景改变实际输入数据。</p>
+        </aside>
+
+        <div class="result-panel">
+          <div class="panel-title result-heading"><div class="title-group"><span class="step-label">02</span><h3>查看数据与依据</h3></div><button id="export" type="button" class="secondary" disabled>导出分析记录 ↓</button></div>
+          <p id="dirty-notice" class="dirty-notice" role="status" hidden>参数已修改，点击“运行分析”更新结果后再复核。</p>
+          <div id="result" aria-live="polite" aria-atomic="false"><div class="empty-state">正在准备浏览器端演示…</div></div>
+          <noscript><p class="empty-state">启用 JavaScript 后可运行交互演示；探索记录仍可阅读。</p></noscript>
+          <section id="review-section" class="review-section" aria-labelledby="review-heading" hidden>
+            <div class="panel-title"><span class="step-label">03</span><h3 id="review-heading">留下你的判断</h3></div>
+            <p class="field-help">复核保存在当前浏览器，可随分析记录一起导出。它不代表贷款审批。</p>
+            <form id="review-form">
+              <fieldset><legend class="sr-only">复核意见</legend><div class="review-options"><label><input type="radio" name="decision" value="confirmed">支持当前解释</label><label><input type="radio" name="decision" value="rejected">不支持当前解释</label><label><input type="radio" name="decision" value="uncertain" checked>仍不确定</label></div></fieldset>
+              <label class="review-label" for="review-reason">复核理由<textarea id="review-reason" rows="3" maxlength="1200" placeholder="哪条证据支持你的判断？还缺少什么信息？" required></textarea></label>
+              <div class="review-actions"><p id="review-message" role="status"></p><button class="primary" type="submit">保存复核</button></div>
+            </form>
+            <div id="review-records"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="exploration" class="exploration-section" aria-labelledby="exploration-heading">
+      <div class="section-top"><div><p class="eyebrow">FROM OBSERVATION TO ITERATION</p><h2 id="exploration-heading">从亲自操作，到一个具体改进。</h2></div><a class="inline-link" href="./EXPLORATION.md">阅读完整探索记录 ↗</a></div>
+      <div class="journey-grid">
+        <article class="journey-card"><span class="journey-index">01 / 体验</span><h3>实际跑过三个案例</h3><p>在已有本地项目中，亲自提交渠道异常、带有审批猜测的描述、9月缺数据三组输入，并保存人工复核。</p><small>2026.10.12 · 本地操作记录已核对</small></article>
+        <article class="journey-card"><span class="journey-index">02 / 发现</span><h3>日期限制没有解释</h3><p>修改开始日期时，日历被原结束日期卡住。用户实际遇到这个问题并提出；本 Demo 改为自由选择、明确校验。</p><small>用户亲自发现的使用问题</small></article>
+        <article class="journey-card"><span class="journey-index">03 / 复盘</span><h3>缺数据应该先说清楚</h3><p>协作复盘发现：原流程耗尽8次工具调用，才提示证据不足。本 Demo 先检查覆盖，直接说明缺少的日期与下一步。</p><small>当前数据不足时，归因规则执行0次</small></article>
+      </div>
+      <div class="ownership"><div><h3>这份作品展示什么</h3><p>发现问题、提出可验收的改进、检查数据证据、说明能力边界。AI 协助完成编码和自动化验证；用户已完成前述本地案例操作，尚待亲自验收这个新 Demo。</p></div><div><h3>实现与来源</h3><p>本演示的界面、数据生成与规则计算单独编写。需求来自对已有信贷诊断项目的体验；原有 Agent 的检索、评分和后台代码不属于本演示实现。</p><a class="inline-link" href="./PROVENANCE.md">来源与协作说明 ↗</a></div></div>
+    </section>
+    <section class="limits-section" aria-labelledby="limits-heading"><h2 id="limits-heading">能解释结果，也说明限制。</h2><p>规则支持候选解释，不能证明因果关系。合成逾期标签已作为观察完成的教学样本提供，未模拟真实还款观察期；实际业务仍需核查样本成熟度、统计口径、策略变更与模型表现。这个演示没有验证真实模型准确率，也不执行授信或审批。</p></section>
+  </main>
+  <dialog id="export-dialog" aria-labelledby="export-heading"><div class="export-top"><div><p class="eyebrow">EXPORT</p><h2 id="export-heading">分析记录已生成</h2></div><button id="close-export" class="secondary" type="button" aria-label="关闭导出预览">关闭</button></div><p class="field-help">可以下载文件，或复制内容保存。记录只包含当前演示数据和本浏览器的复核意见。</p><label class="review-label" for="export-content">记录内容<textarea id="export-content" readonly rows="12" spellcheck="false"></textarea></label><div class="export-actions"><button id="copy-export" class="secondary" type="button">复制内容</button><button id="download-export" class="primary" type="button">下载文件 ↓</button></div><p id="export-message" class="field-help" role="status"></p></dialog>
+  <footer><span>cbb-cbb · 2026 · 个人产品探索</span><a href="https://github.com/cbb-cbb/credit-evidence-demo" target="_blank" rel="noreferrer">源代码与验证记录 ↗</a></footer>
+</body>
+</html>

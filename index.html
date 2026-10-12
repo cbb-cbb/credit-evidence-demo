@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="信贷指标异常分析交互作品：以合成数据演示数据覆盖检查、渠道证据比较与人工复核，记录真实探索过程与AI协作边界。">
+  <meta name="description" content="导入聚合CSV，在浏览器内完成数据质检、信贷指标对比、证据分析与报告导出。附可复算示例、测试与个人产品探索记录。">
   <meta name="theme-color" content="#122b40">
   <title>信贷指标异常 · 证据工作台 | cbb-cbb 的产品探索</title>
   <link rel="stylesheet" href="./style.css">
@@ -16,38 +16,48 @@
   </header>
   <main id="top">
     <section class="hero">
-      <div class="hero-copy"><p class="eyebrow">信贷指标异常 / 个人交互作品</p><h1>先确认数据，<br>再解释异常。</h1><p class="hero-description">一个关于分析可信度的产品实验：用可检查的数据支持判断，在证据不足时说清楚原因，让人的复核留下记录。</p><a class="primary hero-link" href="#demo">用一分钟体验 <span aria-hidden="true">↓</span></a></div>
-      <aside class="hero-note" aria-label="作品运行方式"><span class="note-number">01 → 02 → 03</span><h2>检查覆盖 → 比较证据 → 人工复核</h2><p>这里使用合成数据和透明规则，所有计算在浏览器中完成；没有在线调用大模型。</p><div class="note-tags"><span>无需登录</span><span>无需 API 密钥</span><span>不接入公司数据</span></div><p class="quiet">AI 辅助实现 · 贡献与验证范围见下方探索记录</p></aside>
+      <div class="hero-copy"><p class="eyebrow">信贷指标异常 / CSV 分析原型 · V2</p><h1>先确认数据，<br>再解释异常。</h1><p class="hero-description">导入一份按日、按渠道汇总的 CSV，检查数据质量，比较指标变化，生成一份有依据、可复核的分析报告。</p><a class="primary hero-link" href="#demo">体验分析流程 <span aria-hidden="true">↓</span></a></div>
+      <aside class="hero-note" aria-label="作品运行方式"><span class="note-number">01 → 02 → 03 → 04</span><h2>导入与质检 → 比较证据 → 复核 → 报告</h2><p>支持自选 CSV 和三种合成场景。计算与文件处理都在当前浏览器内完成，不上传文件；报告按透明规则生成，没有在线调用大模型。</p><div class="note-tags"><span>无需登录</span><span>本地文件处理</span><span>规则与口径可检查</span></div><p class="quiet">AI 辅助实现 · 贡献与验证范围见下方探索记录</p></aside>
     </section>
 
     <section id="demo" class="demo-section" aria-labelledby="demo-heading">
-      <div class="section-top"><div><p class="eyebrow">INTERACTIVE DEMO</p><h2 id="demo-heading">同一个问题，换一种数据再看。</h2></div><span class="mode-badge"><span aria-hidden="true"></span>合成数据 · 透明规则</span></div>
+      <div class="section-top"><div><p class="eyebrow">DATA → EVIDENCE → REPORT</p><h2 id="demo-heading">从一份数据，走完一次分析。</h2></div><span class="mode-badge" id="mode-badge"><span aria-hidden="true"></span>合成数据 · 透明规则</span></div>
       <div class="demo-layout">
         <aside class="setup-panel">
-          <div class="panel-title"><span class="step-label">01</span><h3>选择场景与时间</h3></div>
-          <p class="field-help">切换场景会重新生成对应数据，每次结果均可复算。</p>
-          <div id="scenarios" class="scenario-list" role="group" aria-label="合成数据场景"></div>
-          <div class="coverage-card"><span>数据覆盖范围</span><strong id="coverage-label">2026.06.01 — 2026.07.30</strong><small>分析指标：首期30天逾期率（FPD30）</small></div>
+          <div class="panel-title"><span class="step-label">01</span><h3>选择数据与时间</h3></div>
+          <div class="source-switch" role="group" aria-label="数据来源"><button id="source-demo" type="button" aria-pressed="true">演示场景</button><button id="source-import" type="button" aria-pressed="false">导入 CSV</button></div>
+          <div id="demo-source"><p class="field-help">切换场景改变实际数据，保留已选日期。</p><div id="scenarios" class="scenario-list" role="group" aria-label="合成数据场景"></div></div>
+          <div id="import-source" hidden>
+            <p class="field-help">每行是一日一个渠道的汇总。文件只在本页内处理，刷新后需重新导入；复核可单独保存。</p>
+            <label class="file-label" for="csv-file">选择 CSV 文件<input id="csv-file" type="file" accept=".csv,text/csv"></label>
+            <div class="sample-actions"><button id="load-sample" type="button" class="secondary">载入示例 CSV</button><a href="./examples/valid-channel.csv" download="valid-channel.csv">下载模板 ↗</a></div>
+            <details class="import-format"><summary>字段格式与填写要求</summary><div class="detail-content"><code>date,channel,count,overdue</code><p>date：YYYY-MM-DD；channel：渠道名；count：放款笔数；overdue：其中逾期笔数。数字必须是非负整数，每个日期、渠道组合唯一。</p><p>请保留每日各渠道记录；确实无放款时显式填写0。缺失行不会自动按0补齐。支持 UTF-8 CSV，最多2MB、20,000行、50个渠道和366天跨度。</p><a class="inline-link" href="./DATA_FORMAT.md">完整数据契约 ↗</a></div></details>
+            <label class="paste-label" for="csv-text">粘贴或编辑 CSV<textarea id="csv-text" rows="6" spellcheck="false" placeholder="date,channel,count,overdue&#10;2026-07-01,渠道A,100,10"></textarea></label>
+            <button id="validate-csv" type="button" class="primary full-width">校验并载入数据</button>
+            <div id="import-feedback" class="import-feedback" role="status">选择文件、载入示例，或粘贴符合格式的内容。</div>
+          </div>
+          <div class="coverage-card"><span>数据覆盖范围</span><strong id="coverage-label">2026.06.01 — 2026.07.30</strong><small id="metric-label">演示指标：首期30天逾期率（FPD30）</small></div>
           <form id="analysis-form" novalidate>
             <fieldset><legend>正常对比期</legend><div class="date-row"><label for="base-start">开始日期<input id="base-start" name="base-start" type="date" required></label><label for="base-end">结束日期<input id="base-end" name="base-end" type="date" required></label></div></fieldset>
             <fieldset><legend>待分析期</legend><div class="date-row"><label for="anomaly-start">开始日期<input id="anomaly-start" name="anomaly-start" type="date" required></label><label for="anomaly-end">结束日期<input id="anomaly-end" name="anomaly-end" type="date" required></label></div></fieldset>
             <p class="field-help">四个日期可自由修改。运行时检查先后顺序、窗口重叠与数据覆盖。</p>
+            <label class="maturity-check" id="maturity-label" hidden><input id="maturity-confirmed" type="checkbox"><span>我已确认两期样本观察期完整，且统计口径一致。<small>这是你的声明，程序无法从这四列数据验证。</small></span></label>
             <p id="date-hint" class="inline-warning" role="status" hidden></p>
             <button class="primary run-button" type="submit">运行分析 <span aria-hidden="true">→</span></button>
           </form>
           <button id="missing-case" type="button" class="secondary full-width">试试没有数据的9月</button>
           <button id="reset-periods" type="button" class="text-button full-width">恢复有数据的日期</button>
-          <p class="local-note">更改描述不能创造数据。这里通过切换场景改变实际输入数据。</p>
+          <p class="local-note" id="source-note">示例的逾期标签假设观察期已完成。导入数据需要另行核查观察期和口径。</p>
         </aside>
 
         <div class="result-panel">
-          <div class="panel-title result-heading"><div class="title-group"><span class="step-label">02</span><h3>查看数据与依据</h3></div><button id="export" type="button" class="secondary" disabled>导出分析记录 ↓</button></div>
+          <div class="panel-title result-heading"><div class="title-group"><span class="step-label">02</span><h3>查看数据与依据</h3></div><div class="result-actions"><button id="report" type="button" class="secondary" disabled>生成分析报告</button><button id="export" type="button" class="secondary" disabled>JSON 记录 ↓</button></div></div>
           <p id="dirty-notice" class="dirty-notice" role="status" hidden>参数已修改，点击“运行分析”更新结果后再复核。</p>
           <div id="result" aria-live="polite" aria-atomic="false"><div class="empty-state">正在准备浏览器端演示…</div></div>
           <noscript><p class="empty-state">启用 JavaScript 后可运行交互演示；探索记录仍可阅读。</p></noscript>
           <section id="review-section" class="review-section" aria-labelledby="review-heading" hidden>
             <div class="panel-title"><span class="step-label">03</span><h3 id="review-heading">留下你的判断</h3></div>
-            <p class="field-help">复核保存在当前浏览器，可随分析记录一起导出。它不代表贷款审批。</p>
+            <p class="field-help">复核按数据内容、日期与观察期声明保存在当前浏览器，可随报告导出。旧版复核保留在浏览器存储中，不自动归入新版结果。它不代表贷款审批。</p>
             <form id="review-form">
               <fieldset><legend class="sr-only">复核意见</legend><div class="review-options"><label><input type="radio" name="decision" value="confirmed">支持当前解释</label><label><input type="radio" name="decision" value="rejected">不支持当前解释</label><label><input type="radio" name="decision" value="uncertain" checked>仍不确定</label></div></fieldset>
               <label class="review-label" for="review-reason">复核理由<textarea id="review-reason" rows="3" maxlength="1200" placeholder="哪条证据支持你的判断？还缺少什么信息？" required></textarea></label>
@@ -66,11 +76,11 @@
         <article class="journey-card"><span class="journey-index">02 / 发现</span><h3>日期限制没有解释</h3><p>修改开始日期时，日历被原结束日期卡住。用户实际遇到这个问题并提出；本 Demo 改为自由选择、明确校验。</p><small>用户亲自发现的使用问题</small></article>
         <article class="journey-card"><span class="journey-index">03 / 复盘</span><h3>缺数据应该先说清楚</h3><p>协作复盘发现：原流程耗尽8次工具调用，才提示证据不足。本 Demo 先检查覆盖，直接说明缺少的日期与下一步。</p><small>当前数据不足时，归因规则执行0次</small></article>
       </div>
-      <div class="ownership"><div><h3>这份作品展示什么</h3><p>发现问题、提出可验收的改进、检查数据证据、说明能力边界。AI 协助完成编码和自动化验证；用户已完成前述本地案例操作，尚待亲自验收这个新 Demo。</p></div><div><h3>实现与来源</h3><p>本演示的界面、数据生成与规则计算单独编写。需求来自对已有信贷诊断项目的体验；原有 Agent 的检索、评分和后台代码不属于本演示实现。</p><a class="inline-link" href="./PROVENANCE.md">来源与协作说明 ↗</a></div></div>
+      <div class="ownership"><div><h3>从场景演示到 CSV 分析</h3><p>V2 增加 CSV 导入、错误定位、观察期声明、每日趋势和带证据编号的分析报告。AI 协助完成编码和工程验证；用户已完成前述本地案例操作，V2 的个人体验与验收仍待完成。</p></div><div><h3>实现与来源</h3><p>本演示的界面、数据生成与规则计算单独编写。需求来自对已有信贷诊断项目的体验；原有 Agent 的检索、评分和后台代码不属于本演示实现。</p><a class="inline-link" href="./PROVENANCE.md">来源与协作说明 ↗</a></div></div>
     </section>
-    <section class="limits-section" aria-labelledby="limits-heading"><h2 id="limits-heading">能解释结果，也说明限制。</h2><p>规则支持候选解释，不能证明因果关系。合成逾期标签已作为观察完成的教学样本提供，未模拟真实还款观察期；实际业务仍需核查样本成熟度、统计口径、策略变更与模型表现。这个演示没有验证真实模型准确率，也不执行授信或审批。</p></section>
+    <section class="limits-section" aria-labelledby="limits-heading"><h2 id="limits-heading">能解释结果，也说明限制。</h2><p>规则支持候选解释，不能证明因果关系。合成样本假设观察期完整；导入数据的观察期和口径需由使用者核查，少于100笔的任一窗口只展示事实并提示复核。阈值用于产品原型，未经真实业务校准。报告由程序生成，没有在线调用大模型，也不执行授信或审批。</p></section>
   </main>
-  <dialog id="export-dialog" aria-labelledby="export-heading"><div class="export-top"><div><p class="eyebrow">EXPORT</p><h2 id="export-heading">分析记录已生成</h2></div><button id="close-export" class="secondary" type="button" aria-label="关闭导出预览">关闭</button></div><p class="field-help">可以下载文件，或复制内容保存。记录只包含当前演示数据和本浏览器的复核意见。</p><label class="review-label" for="export-content">记录内容<textarea id="export-content" readonly rows="12" spellcheck="false"></textarea></label><div class="export-actions"><button id="copy-export" class="secondary" type="button">复制内容</button><button id="download-export" class="primary" type="button">下载文件 ↓</button></div><p id="export-message" class="field-help" role="status"></p></dialog>
+  <dialog id="export-dialog" aria-labelledby="export-heading"><div class="export-top"><div><p class="eyebrow">EXPORT</p><h2 id="export-heading">分析记录已生成</h2></div><button id="close-export" class="secondary" type="button" aria-label="关闭导出预览">关闭</button></div><p class="field-help">可以下载文件，或复制内容保存。报告和记录对应本次数据、日期及复核意见，分享前请自行检查内容。</p><label class="review-label" for="export-content">记录内容<textarea id="export-content" readonly rows="12" spellcheck="false"></textarea></label><div class="export-actions"><button id="copy-export" class="secondary" type="button">复制内容</button><button id="download-export" class="primary" type="button">下载文件 ↓</button></div><p id="export-message" class="field-help" role="status"></p></dialog>
   <footer><span>cbb-cbb · 2026 · 个人产品探索</span><a href="https://github.com/cbb-cbb/credit-evidence-demo" target="_blank" rel="noreferrer">源代码与验证记录 ↗</a></footer>
 </body>
 </html>

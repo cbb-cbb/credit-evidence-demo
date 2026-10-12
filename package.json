@@ -1,13 +1,13 @@
 {
   "name": "credit-evidence-demo",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "description": "Standalone synthetic-data evidence workbench and product exploration portfolio",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node --test tests/engine.test.mjs",
-    "check": "node --check app.mjs"
+    "test": "node --test",
+    "check": "node --check app.mjs && node --check views.mjs && node --check engine.mjs && node --check data-import.mjs && node --check report.mjs && node --check server.mjs"
   },
   "engines": { "node": ">=20" }
 }

@@ -1,13 +1,13 @@
 {
   "name": "credit-evidence-demo",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
-  "description": "Standalone synthetic-data evidence workbench and product exploration portfolio",
+  "description": "Credit evidence workbench with CSV analysis, local SQLite simulation and optional LLM explanations",
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test",
-    "check": "node --check app.mjs && node --check views.mjs && node --check engine.mjs && node --check data-import.mjs && node --check report.mjs && node --check server.mjs"
+    "check": "node --check app.mjs && node --check views.mjs && node --check engine.mjs && node --check data-import.mjs && node --check report.mjs && node --check server.mjs && node --check database.mjs && node --check llm.mjs && node --check assistant.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": { "node": ">=24" }
 }

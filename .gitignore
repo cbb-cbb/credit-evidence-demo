@@ -2,3 +2,9 @@ node_modules/
 .DS_Store
 *.log
 screenshots/
+.env
+.env.*
+!.env.example
+.local/
+*.sqlite
+*.sqlite-*

@@ -31,11 +31,12 @@ function qualityWarnings(result) {
   const warnings = result.quality?.warnings || [];
   const maturity = result.dataSource === 'imported_csv'
     ? (result.quality?.maturityConfirmed ? '观察期与口径：使用者已声明确认，程序未独立验证。' : '观察期与口径：尚未确认，当前只能查看统计事实。')
+    : result.dataSource === 'synthetic_database' ? '已按模拟贷款的首期应还日和截至日检查观察期；该模拟口径不能代替真实业务核查。'
     : '合成样本假设观察期完整；此假设不能代替实际业务核查。';
   return `<div class="quality-summary"><strong>分析前的数据检查</strong><p>${escape(maturity)}</p>${warnings.length ? issueList(warnings) : '<p>两个窗口通过当前数据覆盖与样本量检查。</p>'}</div>`;
 }
 export function renderResult(result) {
-  const snapshot = `<div class="result-meta"><span>数据：${escape(result.datasetName || result.scenarioId)}</span><span>程序计算 · 无在线模型调用</span><span>正常：${escape(result.periods.baseline?.start)} 至 ${escape(result.periods.baseline?.end)}<br>待分析：${escape(result.periods.anomaly?.start)} 至 ${escape(result.periods.anomaly?.end)}</span></div>`;
+  const snapshot = `<div class="result-meta"><span>数据：${escape(result.datasetName || result.scenarioId)}</span><span>${result.dataSource === 'synthetic_database' ? '统计与规则由程序计算 · 分母为成熟贷款笔数' : '程序计算 · 无在线模型调用'}</span><span>正常：${escape(result.periods.baseline?.start)} 至 ${escape(result.periods.baseline?.end)}<br>待分析：${escape(result.periods.anomaly?.start)} 至 ${escape(result.periods.anomaly?.end)}</span></div>`;
   if (result.status === 'blocked') {
     const dates = result.issues.some((issue) => ['invalid_date','reversed_period','overlapping_or_reversed_periods'].includes(issue.code));
     const heading = dates ? '时间窗口还需要调整。' : '数据检查未通过，暂不归因。';

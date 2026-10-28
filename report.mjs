@@ -34,6 +34,9 @@ const availabilityLabels = { new: '新增渠道，正常期无样本', exited: '
 
 function maturityStatement(result) {
   const quality = result.quality;
+  if (quality?.maturitySource === 'synthetic_schedule_check') {
+    return '已按模拟贷款的首期应还日与数据截至日检查观察期，未成熟样本已排除；这不代表真实业务口径已经验证。';
+  }
   if (quality?.maturitySource === 'synthetic_assumption' || (!quality && result.dataSource === 'synthetic')) {
     return '合成结果按已完成观察期的假设生成；这项假设不证明真实业务样本已成熟。';
   }
@@ -75,7 +78,7 @@ function nextSteps(result, findings) {
 }
 
 /** Return a Chinese Markdown report. reviews must already match this dataset/window. */
-export function buildReport(result, reviews = [], { generatedAt = new Date().toISOString() } = {}) {
+export function buildReport(result, reviews = [], { generatedAt = new Date().toISOString(), explanation = null } = {}) {
   const data = result && typeof result === 'object' ? result : {};
   const status = ['ready', 'blocked', 'needs_review'].includes(data.status) ? data.status : 'blocked';
   const state = { ready: '计算完成，候选解释待人工核查', blocked: '检查未通过，本次暂不归因', needs_review: '需人工复核，暂不形成归因结论' }[status];
@@ -88,10 +91,10 @@ export function buildReport(result, reviews = [], { generatedAt = new Date().toI
   const evidenceIds = new Map(evidence.map((item, index) => [item?.id, `E${index + 1}`]));
   const lines = [
     '# 信贷指标异常分析报告', '',
-    '本报告由程序按计算结果生成，是结构化报告，未调用 LLM。候选解释是规则线索，不是因果证明，也不提供正确概率。', '',
+    explanation ? '统计正文由程序计算，文末另附大模型解读。候选解释和模型文字均需人工核查，不是因果证明，也不提供正确概率。' : '本报告由程序按计算结果生成，是结构化报告，未调用 LLM。候选解释是规则线索，不是因果证明，也不提供正确概率。', '',
     '## 数据与分析范围', '',
     `- 生成时间：${plain(generatedAt)}`,
-    `- 数据来源：${data.dataSource === 'synthetic' ? '合成数据' : data.dataSource === 'imported_csv' ? '使用者导入的聚合 CSV' : '未提供'}`,
+    `- 数据来源：${data.dataSource === 'synthetic' ? '合成数据' : data.dataSource === 'imported_csv' ? '使用者导入的聚合 CSV' : data.dataSource === 'synthetic_database' ? '本地 SQLite 模拟贷款数据库' : '未提供'}`,
     `- 数据集名称：${plain(data.datasetName ?? data.scenarioId, '未命名')}`,
     `- 数据指纹：${plain(data.datasetId, '旧版结果未提供；建议重新运行以记录数据指纹')}`,
     `- 数据可用日期：${periodText(data.coverage)}`,
@@ -150,7 +153,7 @@ export function buildReport(result, reviews = [], { generatedAt = new Date().toI
     }
   }
   lines.push('', '## 缺失信息与适用边界', '',
-    '当前聚合字段不能独立核验逐笔观察期、模型预测分数、AUC/KS、审批阈值或策略变更；仅凭逾期率不能确认模型失效或审批放宽。');
+    data.dataSource === 'synthetic_database' ? '本次观察期依据模拟还款日程检查；没有真实模型预测分数、AUC/KS、审批阈值或策略变更记录，仅凭逾期率不能确认模型失效或审批放宽。' : '当前聚合字段不能独立核验逐笔观察期、模型预测分数、AUC/KS、审批阈值或策略变更；仅凭逾期率不能确认模型失效或审批放宽。');
   if (findings.length) lines.push('', ...findings.map((item) => `- 本次待解决：${warningText(item)}`));
   if (array(data.assumptions).length) lines.push('');
   for (const assumption of array(data.assumptions)) lines.push(`- 口径与假设：${plain(assumption)}`);
@@ -160,5 +163,13 @@ export function buildReport(result, reviews = [], { generatedAt = new Date().toI
     lines.push(`- 复核 ${index + 1}：${decisions[review?.decision] ?? '未识别的复核选项'}；时间：${plain(review?.createdAt)}。`, `  理由：${plain(review?.reason, '未填写理由')}`);
   }
   lines.push('', '## 下一步', '', ...nextSteps(normalized, findings).map((step, index) => `${index + 1}. ${step}`), '');
+  if (data.database) lines.push('', '## 数据库查询口径', '', `- 数据截至日：${plain(data.database.asOf)}`, `- 查询版本：${plain(data.database.queryId)}`, `- 指标定义：${plain(data.database.metricDefinition)}`, `- 当前场景截至日内总笔数：${number(data.database.total)}；成熟：${number(data.database.matured)}；排除未成熟：${number(data.database.excluded)}。以上为场景整体规模，分析指标另按所选窗口计算。`);
+  if (explanation) {
+    lines.push('', '## 大模型解读（需人工核查）', '', `模型：${plain(explanation.model)}；生成时间：${plain(explanation.generatedAt)}。`, '', plain(explanation.summary));
+    for (const [name, items] of [['观察事实', explanation.observations], ['待核查解释', explanation.hypotheses]]) {
+      lines.push('', `### ${name}`, '', ...array(items).map((item) => `- ${plain(item.text)}（证据：${array(item.evidenceIds).map((id) => plain(id)).join('、')}）`));
+    }
+    lines.push('', '### 模型建议的下一步', '', ...array(explanation.nextSteps).map((item) => `- ${plain(item)}`), '', '### 模型声明的限制', '', ...array(explanation.limitations).map((item) => `- ${plain(item)}`), '', plain(explanation.notice), '');
+  }
   return lines.join('\n');
 }

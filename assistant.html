@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>数据库与大模型 · 信贷证据工作台</title>
+  <link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./assistant.css">
+  <script type="module" src="./assistant.mjs"></script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="./"><span class="brand-mark" aria-hidden="true">E</span><span>证据工作台<small>cbb-cbb / 本地数据库实验</small></span></a><nav aria-label="页面导航"><a href="./">CSV 工作台</a><a href="./DATABASE_LLM.md">接入说明 ↗</a></nav></header>
+  <main>
+    <section class="hero db-hero"><div><p class="eyebrow">DATABASE → EVIDENCE → AI / V3</p><h1>连接数据库，<br>让分析有据可查。</h1><p class="hero-description">从模拟贷款记录查询指标，让大模型依据证据解释变化，再保存你的复核。先跑通完整流程，逐步接近真实业务。</p></div><aside class="hero-note"><h2>数据与计算有来源，模型解读有引用。</h2><p>本地数据库保存三个合成场景，不包含真实客户。统计结果由程序计算；大模型只有在配置接口并点击生成后才会调用。</p><div class="service-status" aria-live="polite"><p id="database-status">正在连接本地数据库…</p><p id="model-status">正在检查大模型配置…</p></div></aside></section>
+    <p id="connection-error" class="inline-warning" role="alert" hidden></p>
+    <section class="demo-section" aria-labelledby="work-heading"><div class="section-top"><div><p class="eyebrow">从数据到判断</p><h2 id="work-heading">一次分析，四个可检查的步骤。</h2></div><span class="mode-badge">本地数据库 · 全部为模拟数据</span></div>
+      <div class="demo-layout">
+        <aside class="setup-panel"><div class="panel-title"><span class="step-label">01</span><h3>查询数据库</h3></div>
+          <form id="database-form"><fieldset id="query-fields" disabled>
+            <label class="db-label" for="dataset">模拟业务场景<select id="dataset" required></select></label>
+            <label class="db-label" for="snapshot">数据截至日<input id="snapshot" type="date" required><small>观察期：首期应还日后满 30 天。未成熟样本不进入指标分母。</small></label>
+            <fieldset><legend>正常对比期（放款日）</legend><div class="date-row"><label for="db-base-start">开始日期<input id="db-base-start" type="date" required></label><label for="db-base-end">结束日期<input id="db-base-end" type="date" required></label></div></fieldset>
+            <fieldset><legend>待分析期（放款日）</legend><div class="date-row"><label for="db-anomaly-start">开始日期<input id="db-anomaly-start" type="date" required></label><label for="db-anomaly-end">结束日期<input id="db-anomaly-end" type="date" required></label></div></fieldset>
+            <button id="query-button" type="submit" class="primary run-button">查询并计算证据 <span aria-hidden="true">→</span></button>
+            <button id="restore-dates" type="button" class="text-button full-width">恢复完整观察期与示例日期</button>
+          </fieldset></form>
+          <p class="field-help" id="query-message" role="status"></p>
+          <p class="local-note">查询、分析结果和复核保存在本机。更改条件后需重新计算；历史分析保留当时的证据快照。</p>
+          <div class="history-heading"><h3>最近的分析</h3><button class="text-button" id="refresh-history" type="button">刷新</button></div><div id="history" class="history-list"><p class="field-help">连接后可查看最近 12 次分析。</p></div>
+        </aside>
+        <div class="result-panel">
+          <div class="panel-title result-heading"><div class="title-group"><span class="step-label">02</span><h3>核对统计证据</h3></div><div class="result-actions"><button id="db-report" class="secondary" disabled>导出报告</button><button id="db-export" class="secondary" disabled>JSON 记录 ↓</button></div></div>
+          <p id="snapshot-info" class="field-help"></p><div id="database-result" aria-live="polite"><div class="empty-state">连接成功后，点击左侧“查询并计算证据”。</div></div>
+          <section class="llm-section" aria-labelledby="llm-heading"><div class="panel-title"><span class="step-label">03</span><h3 id="llm-heading">让大模型解释证据</h3></div>
+            <p id="llm-note" class="field-help">先完成数据库查询。模型只收到本次合成数据的汇总证据，不读取贷款明细。</p>
+            <button id="explain-button" class="primary" type="button" disabled>生成大模型解读</button><p id="explain-message" class="field-help" role="status"></p>
+            <div id="model-result" aria-live="polite"></div>
+            <details id="model-setup"><summary>如何接入 DeepSeek、Kimi 等大模型？</summary><div class="detail-content"><p>在项目目录将 <code>.env.example</code> 复制为 <code>.env</code>，在本机填写 API 地址、模型名称和 API Key，然后重启服务。配置完成前，页面不会生成模拟的大模型回答。</p><a class="inline-link" href="./DATABASE_LLM.md">查看具体步骤 ↗</a></div></details>
+          </section>
+          <section id="db-review-section" class="review-section" hidden><div class="panel-title"><span class="step-label">04</span><h3>记录人工复核</h3></div><p class="field-help">证据编号可用于说明你的判断。复核保存到本机数据库，与这次分析关联。</p>
+            <form id="db-review-form">
+              <label class="db-label" for="db-decision">复核结论
+                <select id="db-decision">
+                  <option value="uncertain">仍不确定</option>
+                  <option value="confirmed">支持当前解释</option>
+                  <option value="rejected">不支持当前解释</option>
+                </select>
+              </label>
+              <label class="review-label" for="db-reason">依据和待核查事项<textarea id="db-reason" rows="3" maxlength="1200" required placeholder="例如：E2 支持渠道结构变化，但还需要核对渠道投放记录。"></textarea></label>
+              <div class="review-actions"><p id="db-review-message" role="status"></p><button id="save-db-review" class="primary" type="submit">保存复核</button></div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </section>
+    <p class="db-footer-note">这是使用模拟业务数据的学习原型。统计规则和大模型解释均需核查，不用于贷款审批或真实客户决策。</p>
+  </main>
+  <dialog id="db-export-dialog" aria-labelledby="db-export-heading"><div class="export-top"><h2 id="db-export-heading">分析记录</h2><button id="close-db-export" type="button" class="secondary">关闭</button></div><label class="review-label" for="db-export-content">报告内容<textarea id="db-export-content" rows="14" readonly></textarea></label><div class="export-actions"><button id="copy-db-export" type="button" class="secondary">复制</button><button id="download-db-export" type="button" class="primary">下载</button></div><p id="db-export-message" class="field-help" role="status"></p></dialog>
+  <footer><span>cbb-cbb · 数据库与大模型实验</span><a href="./">返回 CSV 工作台 ↗</a></footer>
+</body>
+</html>
